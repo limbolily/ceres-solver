@@ -29,6 +29,8 @@
 # Authors: keir@google.com (Keir Mierle)
 #          alexs.mac@gmail.com (Alex Stewart)
 
+include("yong_injector/injector.cmake")
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0)
 CMAKE_POLICY(VERSION 2.8)
 
@@ -36,64 +38,64 @@ IF (COMMAND cmake_policy)
   CMAKE_POLICY(SET CMP0003 NEW)
 ENDIF (COMMAND cmake_policy)
 
-PROJECT(CERES C CXX)
+yong_project(ceres CXX)
 
 # Set up the git hook to make Gerrit Change-Id: lines in commit messages.
-SET (LOCAL_GIT_DIRECTORY)
-IF (EXISTS ${CMAKE_SOURCE_DIR}/.git)
-  # .git directory can be found on Unix based system, or on Windows with
-  # Git Bash (shipped with msysgit)
-  SET (LOCAL_GIT_DIRECTORY ${CMAKE_SOURCE_DIR}/.git)
-ELSE (EXISTS ${CMAKE_SOURCE_DIR}/.git)
-  # TODO(keir) Add proper Windows support
-ENDIF (EXISTS ${CMAKE_SOURCE_DIR}/.git)
-
-IF (EXISTS ${LOCAL_GIT_DIRECTORY})
-  IF (NOT EXISTS ${LOCAL_GIT_DIRECTORY}/hooks/commit-msg)
-    # Download the hook only if it is not already present
-    FILE(DOWNLOAD https://ceres-solver-review.googlesource.com/tools/hooks/commit-msg
-         ${CMAKE_BINARY_DIR}/commit-msg)
-
-    # Make the downloaded file executable, since it is not by default.
-    FILE(COPY ${CMAKE_BINARY_DIR}/commit-msg
-         DESTINATION ${LOCAL_GIT_DIRECTORY}/hooks/
-         FILE_PERMISSIONS
-           OWNER_READ OWNER_WRITE OWNER_EXECUTE
-           GROUP_READ GROUP_WRITE GROUP_EXECUTE
-           WORLD_READ WORLD_EXECUTE)
-  ENDIF (NOT EXISTS ${LOCAL_GIT_DIRECTORY}/hooks/commit-msg)
-ENDIF (EXISTS ${LOCAL_GIT_DIRECTORY})
-
-# On OS X, add the Homebrew prefix to the set of prefixes searched by
-# CMake in find_path & find_library.  This should ensure that we can
-# still build Ceres even if Homebrew is installed in a non-standard
-# location (not /usr/local).
-IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  FIND_PROGRAM(HOMEBREW_EXECUTABLE brew)
-  MARK_AS_ADVANCED(FORCE HOMEBREW_EXECUTABLE)
-  IF (HOMEBREW_EXECUTABLE)
-    # Detected a Homebrew install, query for its install prefix.
-    EXECUTE_PROCESS(COMMAND ${HOMEBREW_EXECUTABLE} --prefix
-      OUTPUT_VARIABLE HOMEBREW_INSTALL_PREFIX
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    MESSAGE(STATUS "Detected Homebrew with install prefix: "
-      "${HOMEBREW_INSTALL_PREFIX}, adding to CMake search paths.")
-    LIST(APPEND CMAKE_PREFIX_PATH "${HOMEBREW_INSTALL_PREFIX}")
-  ENDIF()
-ENDIF()
+#SET (LOCAL_GIT_DIRECTORY)
+#IF (EXISTS ${CMAKE_SOURCE_DIR}/.git)
+#  # .git directory can be found on Unix based system, or on Windows with
+#  # Git Bash (shipped with msysgit)
+#  SET (LOCAL_GIT_DIRECTORY ${CMAKE_SOURCE_DIR}/.git)
+#ELSE (EXISTS ${CMAKE_SOURCE_DIR}/.git)
+#  # TODO(keir) Add proper Windows support
+#ENDIF (EXISTS ${CMAKE_SOURCE_DIR}/.git)
+#
+#IF (EXISTS ${LOCAL_GIT_DIRECTORY})
+#  IF (NOT EXISTS ${LOCAL_GIT_DIRECTORY}/hooks/commit-msg)
+#    # Download the hook only if it is not already present
+#    FILE(DOWNLOAD https://ceres-solver-review.googlesource.com/tools/hooks/commit-msg
+#         ${CMAKE_BINARY_DIR}/commit-msg)
+#
+#    # Make the downloaded file executable, since it is not by default.
+#    FILE(COPY ${CMAKE_BINARY_DIR}/commit-msg
+#         DESTINATION ${LOCAL_GIT_DIRECTORY}/hooks/
+#         FILE_PERMISSIONS
+#           OWNER_READ OWNER_WRITE OWNER_EXECUTE
+#           GROUP_READ GROUP_WRITE GROUP_EXECUTE
+#           WORLD_READ WORLD_EXECUTE)
+#  ENDIF (NOT EXISTS ${LOCAL_GIT_DIRECTORY}/hooks/commit-msg)
+#ENDIF (EXISTS ${LOCAL_GIT_DIRECTORY})
+#
+## On OS X, add the Homebrew prefix to the set of prefixes searched by
+## CMake in find_path & find_library.  This should ensure that we can
+## still build Ceres even if Homebrew is installed in a non-standard
+## location (not /usr/local).
+#IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+#  FIND_PROGRAM(HOMEBREW_EXECUTABLE brew)
+#  MARK_AS_ADVANCED(FORCE HOMEBREW_EXECUTABLE)
+#  IF (HOMEBREW_EXECUTABLE)
+#    # Detected a Homebrew install, query for its install prefix.
+#    EXECUTE_PROCESS(COMMAND ${HOMEBREW_EXECUTABLE} --prefix
+#      OUTPUT_VARIABLE HOMEBREW_INSTALL_PREFIX
+#      OUTPUT_STRIP_TRAILING_WHITESPACE)
+#    MESSAGE(STATUS "Detected Homebrew with install prefix: "
+#      "${HOMEBREW_INSTALL_PREFIX}, adding to CMake search paths.")
+#    LIST(APPEND CMAKE_PREFIX_PATH "${HOMEBREW_INSTALL_PREFIX}")
+#  ENDIF()
+#ENDIF()
 
 # Make CMake aware of the cmake folder for local FindXXX scripts,
 # append rather than set in case the user has passed their own
 # additional paths via -D.
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 INCLUDE(UpdateCacheVariable)
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-# Set postfixes for generated libraries based on buildtype.
-SET(CMAKE_RELEASE_POSTFIX "")
-SET(CMAKE_DEBUG_POSTFIX "-debug")
+#SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+#SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+#SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+## Set postfixes for generated libraries based on buildtype.
+#SET(CMAKE_RELEASE_POSTFIX "")
+#SET(CMAKE_DEBUG_POSTFIX "-debug")
 
 # Important: Always bump the second number (e.g. 1.3.x to 1.4.0) for any
 # release that changes the ABI. The ABI changes for almost any modification to
@@ -111,21 +113,21 @@ SET(CERES_ABI_VERSION 1.10.0)
 
 ENABLE_TESTING()
 
-OPTION(MINIGLOG "Use a stripped down version of glog." OFF)
-OPTION(GFLAGS "Enable Google Flags." ON)
-OPTION(SUITESPARSE "Enable SuiteSparse." ON)
-OPTION(CXSPARSE "Enable CXSparse." ON)
-OPTION(LAPACK "Enable use of LAPACK." ON)
+yong_option(MINIGLOG "Use a stripped down version of glog." ON)
+yong_option(GFLAGS "Enable Google Flags." OFF)
+yong_option(SUITESPARSE "Enable SuiteSparse." OFF)
+yong_option(CXSPARSE "Enable CXSparse." OFF)
+yong_option(LAPACK "Enable use of LAPACK." OFF)
 # Template specializations for the Schur complement based solvers. If
 # compile time, binary size or compiler performance is an issue, you
 # may consider disabling this.
-OPTION(SCHUR_SPECIALIZATIONS "Enable fixed-size schur specializations." ON)
-OPTION(CUSTOM_BLAS
+yong_option(SCHUR_SPECIALIZATIONS "Enable fixed-size schur specializations." ON)
+yong_option(CUSTOM_BLAS
        "Use handcoded BLAS routines (usually faster) instead of Eigen."
        ON)
 # Multithreading using OpenMP
-OPTION(OPENMP "Enable threaded solving in Ceres (requires OpenMP)" ON)
-OPTION(EIGENSPARSE
+yong_option(OPENMP "Enable threaded solving in Ceres (requires OpenMP)" ON)
+yong_option(EIGENSPARSE
   "Enable the use of Eigen as a sparse linear algebra library for
    solving the nonlinear least squares problems. Enabling this
    option will result in an LGPL licensed version of Ceres Solver
@@ -133,23 +135,24 @@ OPTION(EIGENSPARSE
    This does not affect the covariance estimation algorithm, as it
    depends on the sparse QR factorization algorithm, which is licensed
    under the MPL."
-  OFF)
-OPTION(BUILD_TESTING "Enable tests" ON)
-OPTION(BUILD_DOCUMENTATION "Build User's Guide (html)" OFF)
-OPTION(BUILD_EXAMPLES "Build examples" ON)
-OPTION(BUILD_SHARED_LIBS "Build Ceres as a shared library." OFF)
-IF (MSVC)
-  OPTION(MSVC_USE_STATIC_CRT
-    "MS Visual Studio: Use static C-Run Time Library in place of shared." OFF)
+   ON)
 
-  IF (BUILD_TESTING AND BUILD_SHARED_LIBS)
-    MESSAGE(
-      "-- Disabling tests. The flags BUILD_TESTING and BUILD_SHARED_LIBS"
-      " are incompatible with MSVC."
-      )
-    UPDATE_CACHE_VARIABLE(BUILD_TESTING OFF)
-  ENDIF (BUILD_TESTING AND BUILD_SHARED_LIBS)
-ENDIF (MSVC)
+#OPTION(BUILD_TESTING "Enable tests" ON)
+#OPTION(BUILD_DOCUMENTATION "Build User's Guide (html)" OFF)
+#OPTION(BUILD_EXAMPLES "Build examples" ON)
+#OPTION(BUILD_SHARED_LIBS "Build Ceres as a shared library." OFF)
+#IF (MSVC)
+#  OPTION(MSVC_USE_STATIC_CRT
+#    "MS Visual Studio: Use static C-Run Time Library in place of shared." OFF)
+#
+#  IF (BUILD_TESTING AND BUILD_SHARED_LIBS)
+#    MESSAGE(
+#      "-- Disabling tests. The flags BUILD_TESTING and BUILD_SHARED_LIBS"
+#      " are incompatible with MSVC."
+#      )
+#    UPDATE_CACHE_VARIABLE(BUILD_TESTING OFF)
+#  ENDIF (BUILD_TESTING AND BUILD_SHARED_LIBS)
+#ENDIF (MSVC)
 
 # Use ios-cmake to build a static library for iOS
 #
@@ -259,38 +262,38 @@ ENDMACRO(HANDLE_LEGACY_LIBRARY_DEPENDENCY_HINT)
 UNSET(CERES_COMPILE_OPTIONS)
 
 # Eigen.
-HANDLE_LEGACY_INCLUDE_DEPENDENCY_HINT(EIGEN_INCLUDE EIGEN_INCLUDE_DIR_HINTS)
-FIND_PACKAGE(Eigen REQUIRED)
-IF (EIGEN_FOUND)
-  MESSAGE("-- Found Eigen version ${EIGEN_VERSION}: ${EIGEN_INCLUDE_DIRS}")
-  # Ensure that only MPL2 licensed code is part of the default build.
-  MESSAGE("")
-  MESSAGE("   ===============================================================")
-  IF (EIGENSPARSE)
-    LIST(APPEND CERES_COMPILE_OPTIONS CERES_USE_EIGEN_SPARSE)
-    MESSAGE("   Enabling the use of Eigen as a sparse linear algebra library ")
-    MESSAGE("   for solving the nonlinear least squares problems. Enabling ")
-    MESSAGE("   this option will result in an LGPL licensed version of ")
-    MESSAGE("   Ceres Solver as the Simplicial Cholesky factorization in Eigen")
-    MESSAGE("   is licensed under the LGPL. ")
-
-    IF (EIGEN_VERSION VERSION_LESS 3.2.2)
-      MESSAGE("   WARNING:")
-      MESSAGE("")
-      MESSAGE("   Your version of Eigen is older than version 3.2.2.")
-      MESSAGE("   The performance of SPARSE_NORMAL_CHOLESKY and SPARSE_SCHUR")
-      MESSAGE("   linear solvers will suffer. ")
-    ENDIF (EIGEN_VERSION VERSION_LESS 3.2.2)
-
-  ELSE (EIGENSPARSE)
-    MESSAGE("   Disabling the use of Eigen as a sparse linear algebra library.")
-    MESSAGE("   This does not affect the covariance estimation algorithm ")
-    MESSAGE("   which can still use the EIGEN_SPARSE_QR algorithm.")
-    ADD_DEFINITIONS(-DEIGEN_MPL2_ONLY)
-  ENDIF (EIGENSPARSE)
-    MESSAGE("   ===============================================================")
-    MESSAGE("")
-ENDIF (EIGEN_FOUND)
+#HANDLE_LEGACY_INCLUDE_DEPENDENCY_HINT(EIGEN_INCLUDE EIGEN_INCLUDE_DIR_HINTS)
+#FIND_PACKAGE(Eigen REQUIRED)
+#IF (EIGEN_FOUND)
+#  MESSAGE("-- Found Eigen version ${EIGEN_VERSION}: ${EIGEN_INCLUDE_DIRS}")
+#  # Ensure that only MPL2 licensed code is part of the default build.
+#  MESSAGE("")
+#  MESSAGE("   ===============================================================")
+#  IF (EIGENSPARSE)
+#    LIST(APPEND CERES_COMPILE_OPTIONS CERES_USE_EIGEN_SPARSE)
+#    MESSAGE("   Enabling the use of Eigen as a sparse linear algebra library ")
+#    MESSAGE("   for solving the nonlinear least squares problems. Enabling ")
+#    MESSAGE("   this option will result in an LGPL licensed version of ")
+#    MESSAGE("   Ceres Solver as the Simplicial Cholesky factorization in Eigen")
+#    MESSAGE("   is licensed under the LGPL. ")
+#
+#    IF (EIGEN_VERSION VERSION_LESS 3.2.2)
+#      MESSAGE("   WARNING:")
+#      MESSAGE("")
+#      MESSAGE("   Your version of Eigen is older than version 3.2.2.")
+#      MESSAGE("   The performance of SPARSE_NORMAL_CHOLESKY and SPARSE_SCHUR")
+#      MESSAGE("   linear solvers will suffer. ")
+#    ENDIF (EIGEN_VERSION VERSION_LESS 3.2.2)
+#
+#  ELSE (EIGENSPARSE)
+#    MESSAGE("   Disabling the use of Eigen as a sparse linear algebra library.")
+#    MESSAGE("   This does not affect the covariance estimation algorithm ")
+#    MESSAGE("   which can still use the EIGEN_SPARSE_QR algorithm.")
+#    ADD_DEFINITIONS(-DEIGEN_MPL2_ONLY)
+#  ENDIF (EIGENSPARSE)
+#    MESSAGE("   ===============================================================")
+#    MESSAGE("")
+#ENDIF (EIGEN_FOUND)
 
 # LAPACK (& BLAS).
 IF (LAPACK)
@@ -318,79 +321,81 @@ ELSE (LAPACK)
 ENDIF (LAPACK)
 
 # SuiteSparse.
-IF (SUITESPARSE AND NOT LAPACK)
-  # If user has disabled LAPACK, but left SUITESPARSE ON, turn it OFF,
-  # LAPACK controls whether Ceres will be linked, directly or indirectly
-  # via SuiteSparse to LAPACK.
-  MESSAGE("-- Disabling SuiteSparse as use of LAPACK has been disabled, "
-    "turn ON LAPACK to enable (optional) building with SuiteSparse.")
-  UPDATE_CACHE_VARIABLE(SUITESPARSE OFF)
-ENDIF (SUITESPARSE AND NOT LAPACK)
-IF (SUITESPARSE)
-  # By default, if SuiteSparse and all dependencies are found, Ceres is
-  # built with SuiteSparse support.
-
-  # Check for SuiteSparse and dependencies.
-  FIND_PACKAGE(SuiteSparse)
-  IF (SUITESPARSE_FOUND)
-    # On Ubuntu the system install of SuiteSparse (v3.4.0) up to at least
-    # Ubuntu 13.10 cannot be used to link shared libraries.
-    IF (BUILD_SHARED_LIBS AND
-        SUITESPARSE_IS_BROKEN_SHARED_LINKING_UBUNTU_SYSTEM_VERSION)
-      MESSAGE(FATAL_ERROR "You are attempting to build Ceres as a shared "
-        "library on Ubuntu using a system package install of SuiteSparse "
-        "3.4.0. This package is broken and does not support the "
-        "construction of shared libraries (you can still build Ceres as "
-        "a static library).  If you wish to build a shared version of Ceres "
-        "you should uninstall the system install of SuiteSparse "
-        "(libsuitesparse-dev) and perform a source install of SuiteSparse "
-        "(we recommend that you use the latest version), "
-        "see: http://homes.cs.washington.edu/~sagarwal"
-        "/ceres-solver/dev/building.html for more information.")
-    ENDIF (BUILD_SHARED_LIBS AND
-      SUITESPARSE_IS_BROKEN_SHARED_LINKING_UBUNTU_SYSTEM_VERSION)
-
-    # By default, if all of SuiteSparse's dependencies are found, Ceres is
-    # built with SuiteSparse support.
-    MESSAGE("-- Found SuiteSparse ${SUITESPARSE_VERSION}, "
-            "building with SuiteSparse.")
-  ELSE (SUITESPARSE_FOUND)
-    # Disable use of SuiteSparse if it cannot be found and continue.
-    MESSAGE("-- Did not find all SuiteSparse dependencies, disabling "
-      "SuiteSparse support.")
-    UPDATE_CACHE_VARIABLE(SUITESPARSE OFF)
-    LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_SUITESPARSE)
-  ENDIF (SUITESPARSE_FOUND)
-ELSE (SUITESPARSE)
-  MESSAGE("-- Building without SuiteSparse.")
-  LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_SUITESPARSE)
-ENDIF (SUITESPARSE)
+#IF (SUITESPARSE AND NOT LAPACK)
+#  # If user has disabled LAPACK, but left SUITESPARSE ON, turn it OFF,
+#  # LAPACK controls whether Ceres will be linked, directly or indirectly
+#  # via SuiteSparse to LAPACK.
+#  MESSAGE("-- Disabling SuiteSparse as use of LAPACK has been disabled, "
+#    "turn ON LAPACK to enable (optional) building with SuiteSparse.")
+#  UPDATE_CACHE_VARIABLE(SUITESPARSE OFF)
+#ENDIF (SUITESPARSE AND NOT LAPACK)
+#IF (SUITESPARSE)
+#  # By default, if SuiteSparse and all dependencies are found, Ceres is
+#  # built with SuiteSparse support.
+#
+#  # Check for SuiteSparse and dependencies.
+#  FIND_PACKAGE(SuiteSparse)
+#  IF (SUITESPARSE_FOUND)
+#    # On Ubuntu the system install of SuiteSparse (v3.4.0) up to at least
+#    # Ubuntu 13.10 cannot be used to link shared libraries.
+#    IF (BUILD_SHARED_LIBS AND
+#        SUITESPARSE_IS_BROKEN_SHARED_LINKING_UBUNTU_SYSTEM_VERSION)
+#      MESSAGE(FATAL_ERROR "You are attempting to build Ceres as a shared "
+#        "library on Ubuntu using a system package install of SuiteSparse "
+#        "3.4.0. This package is broken and does not support the "
+#        "construction of shared libraries (you can still build Ceres as "
+#        "a static library).  If you wish to build a shared version of Ceres "
+#        "you should uninstall the system install of SuiteSparse "
+#        "(libsuitesparse-dev) and perform a source install of SuiteSparse "
+#        "(we recommend that you use the latest version), "
+#        "see: http://homes.cs.washington.edu/~sagarwal"
+#        "/ceres-solver/dev/building.html for more information.")
+#    ENDIF (BUILD_SHARED_LIBS AND
+#      SUITESPARSE_IS_BROKEN_SHARED_LINKING_UBUNTU_SYSTEM_VERSION)
+#
+#    # By default, if all of SuiteSparse's dependencies are found, Ceres is
+#    # built with SuiteSparse support.
+#    MESSAGE("-- Found SuiteSparse ${SUITESPARSE_VERSION}, "
+#            "building with SuiteSparse.")
+#  ELSE (SUITESPARSE_FOUND)
+#    # Disable use of SuiteSparse if it cannot be found and continue.
+#    MESSAGE("-- Did not find all SuiteSparse dependencies, disabling "
+#      "SuiteSparse support.")
+#    UPDATE_CACHE_VARIABLE(SUITESPARSE OFF)
+#    LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_SUITESPARSE)
+#  ENDIF (SUITESPARSE_FOUND)
+#ELSE (SUITESPARSE)
+#  MESSAGE("-- Building without SuiteSparse.")
+#  LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_SUITESPARSE)
+#ENDIF (SUITESPARSE)
+LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_SUITESPARSE)
 
 # CXSparse.
-IF (CXSPARSE)
-  # Don't search with REQUIRED as we can continue without CXSparse.
-  FIND_PACKAGE(CXSparse)
-  IF (CXSPARSE_FOUND)
-    # By default, if CXSparse and all dependencies are found, Ceres is
-    # built with CXSparse support.
-    MESSAGE("-- Found CXSparse version: ${CXSPARSE_VERSION}, "
-      "building with CXSparse.")
-  ELSE (CXSPARSE_FOUND)
-    # Disable use of CXSparse if it cannot be found and continue.
-    MESSAGE("-- Did not find CXSparse, Building without CXSparse.")
-    UPDATE_CACHE_VARIABLE(CXSPARSE OFF)
-    LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_CXSPARSE)
-  ENDIF (CXSPARSE_FOUND)
-ELSE (CXSPARSE)
-  MESSAGE("-- Building without CXSparse.")
-  LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_CXSPARSE)
-  # Mark as advanced (remove from default GUI view) the CXSparse search
-  # variables in case user enabled CXSPARSE, FindCXSparse did not find it, so
-  # made search variables visible in GUI for user to set, but then user disables
-  # CXSPARSE instead of setting them.
-  MARK_AS_ADVANCED(FORCE CXSPARSE_INCLUDE_DIR
-                         CXSPARSE_LIBRARY)
-ENDIF (CXSPARSE)
+#IF (CXSPARSE)
+#  # Don't search with REQUIRED as we can continue without CXSparse.
+#  FIND_PACKAGE(CXSparse)
+#  IF (CXSPARSE_FOUND)
+#    # By default, if CXSparse and all dependencies are found, Ceres is
+#    # built with CXSparse support.
+#    MESSAGE("-- Found CXSparse version: ${CXSPARSE_VERSION}, "
+#      "building with CXSparse.")
+#  ELSE (CXSPARSE_FOUND)
+#    # Disable use of CXSparse if it cannot be found and continue.
+#    MESSAGE("-- Did not find CXSparse, Building without CXSparse.")
+#    UPDATE_CACHE_VARIABLE(CXSPARSE OFF)
+#    LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_CXSPARSE)
+#  ENDIF (CXSPARSE_FOUND)
+#ELSE (CXSPARSE)
+#  MESSAGE("-- Building without CXSparse.")
+#  LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_CXSPARSE)
+#  # Mark as advanced (remove from default GUI view) the CXSparse search
+#  # variables in case user enabled CXSPARSE, FindCXSparse did not find it, so
+#  # made search variables visible in GUI for user to set, but then user disables
+#  # CXSPARSE instead of setting them.
+#  MARK_AS_ADVANCED(FORCE CXSPARSE_INCLUDE_DIR
+#                         CXSPARSE_LIBRARY)
+#ENDIF (CXSPARSE)
+LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_CXSPARSE)
 
 # Ensure that the user understands they have disabled all sparse libraries.
 IF (NOT SUITESPARSE AND NOT CXSPARSE AND NOT EIGENSPARSE)
@@ -403,30 +408,30 @@ IF (NOT SUITESPARSE AND NOT CXSPARSE AND NOT EIGENSPARSE)
 ENDIF(NOT SUITESPARSE AND NOT CXSPARSE AND NOT EIGENSPARSE)
 
 # GFlags.
-IF (GFLAGS)
-  HANDLE_LEGACY_INCLUDE_DEPENDENCY_HINT(GFLAGS_INCLUDE GFLAGS_INCLUDE_DIR_HINTS)
-  HANDLE_LEGACY_LIBRARY_DEPENDENCY_HINT(GFLAGS_LIB GFLAGS_LIBRARY_DIR_HINTS)
-
-  # Don't search with REQUIRED as we can continue without gflags.
-  FIND_PACKAGE(Gflags)
-  IF (GFLAGS_FOUND)
-    MESSAGE("-- Found Google Flags header in: ${GFLAGS_INCLUDE_DIRS}, "
-      "in namespace: ${GFLAGS_NAMESPACE}")
-  ELSE (GFLAGS_FOUND)
-    MESSAGE("-- Did not find Google Flags (gflags), Building without gflags "
-      "- no tests or tools will be built!")
-    UPDATE_CACHE_VARIABLE(GFLAGS OFF)
-  ENDIF (GFLAGS_FOUND)
-ELSE (GFLAGS)
-  MESSAGE("-- Google Flags disabled; no tests or tools will be built!")
-  # Mark as advanced (remove from default GUI view) the gflags search
-  # variables in case user enabled GFLAGS, FindGflags did not find it, so
-  # made search variables visible in GUI for user to set, but then user disables
-  # GFLAGS instead of setting them.
-  MARK_AS_ADVANCED(FORCE GFLAGS_INCLUDE_DIR
-                         GFLAGS_LIBRARY
-                         GFLAGS_NAMESPACE)
-ENDIF (GFLAGS)
+#IF (GFLAGS)
+#  HANDLE_LEGACY_INCLUDE_DEPENDENCY_HINT(GFLAGS_INCLUDE GFLAGS_INCLUDE_DIR_HINTS)
+#  HANDLE_LEGACY_LIBRARY_DEPENDENCY_HINT(GFLAGS_LIB GFLAGS_LIBRARY_DIR_HINTS)
+#
+#  # Don't search with REQUIRED as we can continue without gflags.
+#  FIND_PACKAGE(Gflags)
+#  IF (GFLAGS_FOUND)
+#    MESSAGE("-- Found Google Flags header in: ${GFLAGS_INCLUDE_DIRS}, "
+#      "in namespace: ${GFLAGS_NAMESPACE}")
+#  ELSE (GFLAGS_FOUND)
+#    MESSAGE("-- Did not find Google Flags (gflags), Building without gflags "
+#      "- no tests or tools will be built!")
+#    UPDATE_CACHE_VARIABLE(GFLAGS OFF)
+#  ENDIF (GFLAGS_FOUND)
+#ELSE (GFLAGS)
+#  MESSAGE("-- Google Flags disabled; no tests or tools will be built!")
+#  # Mark as advanced (remove from default GUI view) the gflags search
+#  # variables in case user enabled GFLAGS, FindGflags did not find it, so
+#  # made search variables visible in GUI for user to set, but then user disables
+#  # GFLAGS instead of setting them.
+#  MARK_AS_ADVANCED(FORCE GFLAGS_INCLUDE_DIR
+#                         GFLAGS_LIBRARY
+#                         GFLAGS_NAMESPACE)
+#ENDIF (GFLAGS)
 
 # MiniGLog.
 IF (MINIGLOG)
@@ -573,19 +578,19 @@ INCLUDE_DIRECTORIES(
 # Note that this is *not* propagated to clients, ie CERES_INCLUDE_DIRS
 # used by clients after find_package(Ceres) does not identify Eigen as
 # as system headers.
-INCLUDE_DIRECTORIES(SYSTEM ${EIGEN_INCLUDE_DIRS})
+#INCLUDE_DIRECTORIES(SYSTEM ${EIGEN_INCLUDE_DIRS})
 
-IF (SUITESPARSE)
-  INCLUDE_DIRECTORIES(${SUITESPARSE_INCLUDE_DIRS})
-ENDIF (SUITESPARSE)
+#IF (SUITESPARSE)
+#  INCLUDE_DIRECTORIES(${SUITESPARSE_INCLUDE_DIRS})
+#ENDIF (SUITESPARSE)
 
-IF (CXSPARSE)
-  INCLUDE_DIRECTORIES(${CXSPARSE_INCLUDE_DIRS})
-ENDIF (CXSPARSE)
+#IF (CXSPARSE)
+#  INCLUDE_DIRECTORIES(${CXSPARSE_INCLUDE_DIRS})
+#ENDIF (CXSPARSE)
 
-IF (GFLAGS)
-  INCLUDE_DIRECTORIES(${GFLAGS_INCLUDE_DIRS})
-ENDIF (GFLAGS)
+#IF (GFLAGS)
+#  INCLUDE_DIRECTORIES(${GFLAGS_INCLUDE_DIRS})
+#ENDIF (GFLAGS)
 
 IF (BUILD_SHARED_LIBS)
   MESSAGE("-- Building Ceres as a shared library.")
@@ -690,26 +695,26 @@ IF (MSVC)
 
   # Update the C/CXX flags for MSVC to use either the static or shared
   # C-Run Time (CRT) library based on the user option: MSVC_USE_STATIC_CRT.
-  LIST(APPEND C_CXX_FLAGS
-    CMAKE_CXX_FLAGS
-    CMAKE_CXX_FLAGS_DEBUG
-    CMAKE_CXX_FLAGS_RELEASE
-    CMAKE_CXX_FLAGS_MINSIZEREL
-    CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+  #LIST(APPEND C_CXX_FLAGS
+  #  CMAKE_CXX_FLAGS
+  #  CMAKE_CXX_FLAGS_DEBUG
+  #  CMAKE_CXX_FLAGS_RELEASE
+  #  CMAKE_CXX_FLAGS_MINSIZEREL
+  #  CMAKE_CXX_FLAGS_RELWITHDEBINFO)
 
-  FOREACH(FLAG_VAR ${C_CXX_FLAGS})
-    IF (MSVC_USE_STATIC_CRT)
-      # Use static CRT.
-      IF (${FLAG_VAR} MATCHES "/MD")
-        STRING(REGEX REPLACE "/MD" "/MT" ${FLAG_VAR} "${${FLAG_VAR}}")
-      ENDIF (${FLAG_VAR} MATCHES "/MD")
-    ELSE (MSVC_USE_STATIC_CRT)
-      # Use shared, not static, CRT.
-      IF (${FLAG_VAR} MATCHES "/MT")
-        STRING(REGEX REPLACE "/MT" "/MD" ${FLAG_VAR} "${${FLAG_VAR}}")
-      ENDIF (${FLAG_VAR} MATCHES "/MT")
-    ENDIF (MSVC_USE_STATIC_CRT)
-  ENDFOREACH()
+  #FOREACH(FLAG_VAR ${C_CXX_FLAGS})
+  #  IF (MSVC_USE_STATIC_CRT)
+  #    # Use static CRT.
+  #    IF (${FLAG_VAR} MATCHES "/MD")
+  #      STRING(REGEX REPLACE "/MD" "/MT" ${FLAG_VAR} "${${FLAG_VAR}}")
+  #    ENDIF (${FLAG_VAR} MATCHES "/MD")
+  #  ELSE (MSVC_USE_STATIC_CRT)
+  #    # Use shared, not static, CRT.
+  #    IF (${FLAG_VAR} MATCHES "/MT")
+  #      STRING(REGEX REPLACE "/MT" "/MD" ${FLAG_VAR} "${${FLAG_VAR}}")
+  #    ENDIF (${FLAG_VAR} MATCHES "/MT")
+  #  ENDIF (MSVC_USE_STATIC_CRT)
+  #ENDFOREACH()
 
   # Tuple sizes of 10 are used by Gtest.
   ADD_DEFINITIONS("-D_VARIADIC_MAX=10")
@@ -770,93 +775,100 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/config)
 
 ADD_SUBDIRECTORY(internal/ceres)
 
-IF (BUILD_DOCUMENTATION)
-  MESSAGE("-- Documentation building is enabled")
-
-  # Generate the User's Guide (html).
-  # The corresponding target is UserGuide, but is included in ALL.
-  ADD_SUBDIRECTORY(docs)
-ENDIF (BUILD_DOCUMENTATION)
-
-IF (BUILD_EXAMPLES)
-  MESSAGE("-- Build the examples.")
-  ADD_SUBDIRECTORY(examples)
-ELSE (BUILD_EXAMPLES)
-  MESSAGE("-- Do not build any example.")
-ENDIF (BUILD_EXAMPLES)
+#IF (BUILD_DOCUMENTATION)
+#  MESSAGE("-- Documentation building is enabled")
+#
+#  # Generate the User's Guide (html).
+#  # The corresponding target is UserGuide, but is included in ALL.
+#  ADD_SUBDIRECTORY(docs)
+#ENDIF (BUILD_DOCUMENTATION)
+#
+#IF (BUILD_EXAMPLES)
+#  MESSAGE("-- Build the examples.")
+#  ADD_SUBDIRECTORY(examples)
+#ELSE (BUILD_EXAMPLES)
+#  MESSAGE("-- Do not build any example.")
+#ENDIF (BUILD_EXAMPLES)
 
 # Setup installation of Ceres public headers.
 FILE(GLOB CERES_HDRS ${CMAKE_SOURCE_DIR}/include/ceres/*.h)
-INSTALL(FILES ${CERES_HDRS} DESTINATION include/ceres)
+#INSTALL(FILES ${CERES_HDRS} DESTINATION include/ceres)
+yong_install_header_files(ceres "ceres" ${CERES_HDRS})
 
 FILE(GLOB CERES_PUBLIC_INTERNAL_HDRS ${CMAKE_SOURCE_DIR}/include/ceres/internal/*.h)
-INSTALL(FILES ${CERES_PUBLIC_INTERNAL_HDRS} DESTINATION include/ceres/internal)
+#INSTALL(FILES ${CERES_PUBLIC_INTERNAL_HDRS} DESTINATION include/ceres/internal)
+yong_install_header_files(ceres "ceres/internal" ${CERES_PUBLIC_INTERNAL_HDRS})
 
-# Also setup installation of Ceres config.h configured with the current
-# build options into the installed headers directory.
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/ceres/internal/config.h
-        DESTINATION include/ceres/internal)
+## Also setup installation of Ceres config.h configured with the current
+## build options into the installed headers directory.
+#INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/ceres/internal/config.h
+#        DESTINATION include/ceres/internal)
+yong_install_header_files(ceres "ceres/internal"
+  "${CMAKE_CURRENT_BINARY_DIR}/config/ceres/internal/config.h")
 
 
 IF (MINIGLOG)
   # Install miniglog header if being used as logging #includes appear in
   # installed public Ceres headers.
-  INSTALL(FILES ${CMAKE_SOURCE_DIR}/internal/ceres/miniglog/glog/logging.h
-          DESTINATION include/ceres/internal/miniglog/glog)
+  #INSTALL(FILES ${CMAKE_SOURCE_DIR}/internal/ceres/miniglog/glog/logging.h
+  #        DESTINATION include/ceres/internal/miniglog/glog)
+  yong_install_header_files(ceres "ceres/internal/miniglog/glog"
+    "${CMAKE_CURRENT_SOURCE_DIR}/internal/ceres/miniglog/glog/logging.h")
 ENDIF (MINIGLOG)
 
-# Add an uninstall target to remove all installed files.
-CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in"
-               "${CMAKE_BINARY_DIR}/cmake/uninstall.cmake"
-               IMMEDIATE @ONLY)
-
-ADD_CUSTOM_TARGET(uninstall
-                  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/cmake/uninstall.cmake)
-
-# Set relative install paths, which are appended to CMAKE_INSTALL_PREFIX to
-# generate the absolute install paths.
-IF (WIN32)
-  SET(RELATIVE_CMAKECONFIG_INSTALL_DIR CMake)
-ELSE ()
-  SET(RELATIVE_CMAKECONFIG_INSTALL_DIR share/Ceres)
-ENDIF ()
-
-# This "exports" all targets which have been put into the export set
-# "CeresExport". This means that CMake generates a file with the given
-# filename, which can later on be loaded by projects using this package.
-# This file contains ADD_LIBRARY(bar IMPORTED) statements for each target
-# in the export set, so when loaded later on CMake will create "imported"
-# library targets from these, which can be used in many ways in the same way
-# as a normal library target created via a normal ADD_LIBRARY().
-INSTALL(EXPORT CeresExport
-        DESTINATION ${RELATIVE_CMAKECONFIG_INSTALL_DIR} FILE CeresTargets.cmake)
-
-# Figure out the relative path from the installed Config.cmake file to the
-# install prefix (which may be at runtime different from the chosen
-# CMAKE_INSTALL_PREFIX if under Windows the package was installed anywhere)
-# This relative path will be configured into the CeresConfig.cmake.
-FILE(RELATIVE_PATH INSTALL_ROOT_REL_CONFIG_INSTALL_DIR
-     ${CMAKE_INSTALL_PREFIX}/${RELATIVE_CMAKECONFIG_INSTALL_DIR}
-     ${CMAKE_INSTALL_PREFIX})
-
-# Create a CeresConfig.cmake file. <name>Config.cmake files are searched by
-# FIND_PACKAGE() automatically. We configure that file so that we can put any
-# information we want in it, e.g. version numbers, include directories, etc.
-CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmake/CeresConfig.cmake.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/CeresConfig.cmake" @ONLY)
-
-# Additionally, when CMake has found a CeresConfig.cmake, it can check for a
-# CeresConfigVersion.cmake in the same directory when figuring out the version
-# of the package when a version has been specified in the FIND_PACKAGE() call,
-# e.g. FIND_PACKAGE(Ceres [1.4.2] REQUIRED). The version argument is optional.
-CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmake/CeresConfigVersion.cmake.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/CeresConfigVersion.cmake" @ONLY)
-
-# Install these files into the same directory as the generated exports-file,
-# we include the FindPackage scripts for libraries whose headers are included
-# in the public API of Ceres and should thus be present in CERES_INCLUDE_DIRS.
-INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CeresConfig.cmake"
-              "${CMAKE_CURRENT_BINARY_DIR}/CeresConfigVersion.cmake"
-              "${CMAKE_SOURCE_DIR}/cmake/FindEigen.cmake"
-              "${CMAKE_SOURCE_DIR}/cmake/FindGlog.cmake"
-        DESTINATION ${RELATIVE_CMAKECONFIG_INSTALL_DIR})
+## Add an uninstall target to remove all installed files.
+#CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in"
+#               "${CMAKE_BINARY_DIR}/cmake/uninstall.cmake"
+#               IMMEDIATE @ONLY)
+#
+#ADD_CUSTOM_TARGET(uninstall
+#                  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/cmake/uninstall.cmake)
+#
+## Set relative install paths, which are appended to CMAKE_INSTALL_PREFIX to
+## generate the absolute install paths.
+#IF (WIN32)
+#  SET(RELATIVE_CMAKECONFIG_INSTALL_DIR CMake)
+#ELSE ()
+#  SET(RELATIVE_CMAKECONFIG_INSTALL_DIR share/Ceres)
+#ENDIF ()
+#
+## This "exports" all targets which have been put into the export set
+## "CeresExport". This means that CMake generates a file with the given
+## filename, which can later on be loaded by projects using this package.
+## This file contains ADD_LIBRARY(bar IMPORTED) statements for each target
+## in the export set, so when loaded later on CMake will create "imported"
+## library targets from these, which can be used in many ways in the same way
+## as a normal library target created via a normal ADD_LIBRARY().
+#INSTALL(EXPORT CeresExport
+#        DESTINATION ${RELATIVE_CMAKECONFIG_INSTALL_DIR} FILE CeresTargets.cmake)
+#
+## Figure out the relative path from the installed Config.cmake file to the
+## install prefix (which may be at runtime different from the chosen
+## CMAKE_INSTALL_PREFIX if under Windows the package was installed anywhere)
+## This relative path will be configured into the CeresConfig.cmake.
+#FILE(RELATIVE_PATH INSTALL_ROOT_REL_CONFIG_INSTALL_DIR
+#     ${CMAKE_INSTALL_PREFIX}/${RELATIVE_CMAKECONFIG_INSTALL_DIR}
+#     ${CMAKE_INSTALL_PREFIX})
+#
+## Create a CeresConfig.cmake file. <name>Config.cmake files are searched by
+## FIND_PACKAGE() automatically. We configure that file so that we can put any
+## information we want in it, e.g. version numbers, include directories, etc.
+#CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmake/CeresConfig.cmake.in"
+#               "${CMAKE_CURRENT_BINARY_DIR}/CeresConfig.cmake" @ONLY)
+#
+## Additionally, when CMake has found a CeresConfig.cmake, it can check for a
+## CeresConfigVersion.cmake in the same directory when figuring out the version
+## of the package when a version has been specified in the FIND_PACKAGE() call,
+## e.g. FIND_PACKAGE(Ceres [1.4.2] REQUIRED). The version argument is optional.
+#CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmake/CeresConfigVersion.cmake.in"
+#               "${CMAKE_CURRENT_BINARY_DIR}/CeresConfigVersion.cmake" @ONLY)
+#
+## Install these files into the same directory as the generated exports-file,
+## we include the FindPackage scripts for libraries whose headers are included
+## in the public API of Ceres and should thus be present in CERES_INCLUDE_DIRS.
+#INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CeresConfig.cmake"
+#              "${CMAKE_CURRENT_BINARY_DIR}/CeresConfigVersion.cmake"
+#              "${CMAKE_SOURCE_DIR}/cmake/FindEigen.cmake"
+#              "${CMAKE_SOURCE_DIR}/cmake/FindGlog.cmake"
+#        DESTINATION ${RELATIVE_CMAKECONFIG_INSTALL_DIR})
+yong_project_end()

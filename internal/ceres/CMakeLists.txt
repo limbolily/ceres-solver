@@ -119,14 +119,14 @@ SET(CERES_INTERNAL_SRC
 # install native libraries to lib64 rather than lib. Most distros seem to
 # follow this convention with a couple notable exceptions (Debian-based and
 # Arch-based distros) which we try to detect here.
-IF (CMAKE_SYSTEM_NAME MATCHES "Linux" AND
-    NOT DEFINED LIB_SUFFIX AND
-    NOT CMAKE_CROSSCOMPILING AND
-    CMAKE_SIZEOF_VOID_P EQUAL "8" AND
-    NOT EXISTS "/etc/debian_version" AND
-    NOT EXISTS "/etc/arch-release")
-  SET(LIB_SUFFIX "64")
-ENDIF ()
+#IF (CMAKE_SYSTEM_NAME MATCHES "Linux" AND
+#    NOT DEFINED LIB_SUFFIX AND
+#    NOT CMAKE_CROSSCOMPILING AND
+#    CMAKE_SIZEOF_VOID_P EQUAL "8" AND
+#    NOT EXISTS "/etc/debian_version" AND
+#    NOT EXISTS "/etc/arch-release")
+#  SET(LIB_SUFFIX "64")
+#ENDIF ()
 
 # Also depend on the header files so that they appear in IDEs.
 FILE(GLOB CERES_INTERNAL_HDRS *.h)
@@ -140,17 +140,17 @@ ELSE (SCHUR_SPECIALIZATIONS)
 ENDIF (SCHUR_SPECIALIZATIONS)
 
 # Build the list of dependencies for Ceres based on the current configuration.
-IF (NOT MINIGLOG AND GLOG_FOUND)
-  LIST(APPEND CERES_LIBRARY_PUBLIC_DEPENDENCIES ${GLOG_LIBRARIES})
-ENDIF (NOT MINIGLOG AND GLOG_FOUND)
-
-IF (SUITESPARSE AND SUITESPARSE_FOUND)
-  LIST(APPEND CERES_LIBRARY_PRIVATE_DEPENDENCIES ${SUITESPARSE_LIBRARIES})
-ENDIF (SUITESPARSE AND SUITESPARSE_FOUND)
-
-IF (CXSPARSE AND CXSPARSE_FOUND)
-  LIST(APPEND CERES_LIBRARY_PRIVATE_DEPENDENCIES ${CXSPARSE_LIBRARIES})
-ENDIF (CXSPARSE AND CXSPARSE_FOUND)
+#IF (NOT MINIGLOG AND GLOG_FOUND)
+#  LIST(APPEND CERES_LIBRARY_PUBLIC_DEPENDENCIES ${GLOG_LIBRARIES})
+#ENDIF (NOT MINIGLOG AND GLOG_FOUND)
+#
+#IF (SUITESPARSE AND SUITESPARSE_FOUND)
+#  LIST(APPEND CERES_LIBRARY_PRIVATE_DEPENDENCIES ${SUITESPARSE_LIBRARIES})
+#ENDIF (SUITESPARSE AND SUITESPARSE_FOUND)
+#
+#IF (CXSPARSE AND CXSPARSE_FOUND)
+#  LIST(APPEND CERES_LIBRARY_PRIVATE_DEPENDENCIES ${CXSPARSE_LIBRARIES})
+#ENDIF (CXSPARSE AND CXSPARSE_FOUND)
 
 IF (BLAS_FOUND AND LAPACK_FOUND)
   LIST(APPEND CERES_LIBRARY_PRIVATE_DEPENDENCIES ${LAPACK_LIBRARIES})
@@ -175,136 +175,143 @@ IF (MINIGLOG)
   LIST(APPEND CERES_LIBRARY_SOURCE miniglog/glog/logging.cc)
 ENDIF (MINIGLOG)
 
-ADD_LIBRARY(ceres ${CERES_LIBRARY_SOURCE})
-SET_TARGET_PROPERTIES(ceres PROPERTIES
-  VERSION ${CERES_VERSION}
-  SOVERSION ${CERES_VERSION_MAJOR}
-)
+#ADD_LIBRARY(ceres ${CERES_LIBRARY_SOURCE})
+yong_add_library(ceres
+  SOURCES ${CERES_LIBRARY_SOURCE})
+
+yong_add_dependence(ceres ceres
+  DEPENDENT_PROJECT eigen
+    COMMIT_HASH ac36b528a661eb9733f3069d2b6537ed6c8848b5)
+#SET_TARGET_PROPERTIES(ceres PROPERTIES
+#  VERSION ${CERES_VERSION}
+#  SOVERSION ${CERES_VERSION_MAJOR}
+#)
 
 IF (BUILD_SHARED_LIBS)
   # When building a shared library, mark all external libraries as
   # PRIVATE so they don't show up as a dependency.
-  TARGET_LINK_LIBRARIES(ceres
-        LINK_PUBLIC ${CERES_LIBRARY_PUBLIC_DEPENDENCIES}
-        LINK_PRIVATE ${CERES_LIBRARY_PRIVATE_DEPENDENCIES})
+  #TARGET_LINK_LIBRARIES(ceres
+  #      LINK_PUBLIC ${CERES_LIBRARY_PUBLIC_DEPENDENCIES}
+  #      LINK_PRIVATE ${CERES_LIBRARY_PRIVATE_DEPENDENCIES})
 ELSE (BUILD_SHARED_LIBS)
   # When building a static library, all external libraries are
   # PUBLIC(default) since the user needs to link to them.
   # They will be listed in CeresTargets.cmake.
-  SET(CERES_LIBRARY_DEPENDENCIES
-        ${CERES_LIBRARY_PUBLIC_DEPENDENCIES}
-        ${CERES_LIBRARY_PRIVATE_DEPENDENCIES})
-  TARGET_LINK_LIBRARIES(ceres ${CERES_LIBRARY_DEPENDENCIES})
+  #SET(CERES_LIBRARY_DEPENDENCIES
+  #      ${CERES_LIBRARY_PUBLIC_DEPENDENCIES}
+  #      ${CERES_LIBRARY_PRIVATE_DEPENDENCIES})
+  #TARGET_LINK_LIBRARIES(ceres ${CERES_LIBRARY_DEPENDENCIES})
 ENDIF (BUILD_SHARED_LIBS)
 
-INSTALL(TARGETS ceres
-        EXPORT  CeresExport
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib${LIB_SUFFIX}
-        ARCHIVE DESTINATION lib${LIB_SUFFIX})
-
-IF (BUILD_TESTING AND GFLAGS)
-  # The CERES_GFLAGS_NAMESPACE compile definition is NOT stored in
-  # CERES_COMPILE_OPTIONS (and thus config.h) as Ceres itself does not
-  # require gflags, only the tests and examples do.
-  ADD_DEFINITIONS(-DCERES_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
-
-  ADD_LIBRARY(gtest gmock_gtest_all.cc gmock_main.cc)
-  ADD_LIBRARY(test_util
-              evaluator_test_utils.cc
-              numeric_diff_test_utils.cc
-              test_util.cc)
-
-  IF (MINIGLOG)
-    # When using miniglog, it is compiled into Ceres, thus Ceres becomes
-    # the library against which other libraries should link for logging.
-    TARGET_LINK_LIBRARIES(gtest ${GFLAGS_LIBRARIES} ceres)
-    TARGET_LINK_LIBRARIES(test_util ceres gtest)
-  ELSE (MINIGLOG)
-    TARGET_LINK_LIBRARIES(gtest ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES})
-    TARGET_LINK_LIBRARIES(test_util ceres gtest ${GLOG_LIBRARIES})
-  ENDIF (MINIGLOG)
-
-  MACRO (CERES_TEST NAME)
-    ADD_EXECUTABLE(${NAME}_test ${NAME}_test.cc)
-    TARGET_LINK_LIBRARIES(${NAME}_test test_util ceres gtest)
-    ADD_TEST(NAME ${NAME}_test
-             COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${NAME}_test
-             --test_srcdir
-             ${CMAKE_SOURCE_DIR}/data)
-  ENDMACRO (CERES_TEST)
-
-  CERES_TEST(array_utils)
-  CERES_TEST(autodiff)
-  CERES_TEST(autodiff_cost_function)
-  CERES_TEST(autodiff_local_parameterization)
-  CERES_TEST(block_jacobi_preconditioner)
-  CERES_TEST(block_random_access_dense_matrix)
-  CERES_TEST(block_random_access_diagonal_matrix)
-  CERES_TEST(block_random_access_sparse_matrix)
-  CERES_TEST(block_sparse_matrix)
-  CERES_TEST(c_api)
-  CERES_TEST(canonical_views_clustering)
-  CERES_TEST(compressed_row_sparse_matrix)
-  CERES_TEST(conditioned_cost_function)
-  CERES_TEST(corrector)
-  CERES_TEST(cost_function_to_functor)
-  CERES_TEST(covariance)
-  CERES_TEST(cubic_interpolation)
-  CERES_TEST(dense_sparse_matrix)
-  CERES_TEST(dynamic_autodiff_cost_function)
-  CERES_TEST(dynamic_compressed_row_sparse_matrix)
-  CERES_TEST(dynamic_numeric_diff_cost_function)
-  CERES_TEST(evaluator)
-  CERES_TEST(gradient_checker)
-  CERES_TEST(gradient_checking_cost_function)
-  CERES_TEST(graph)
-  CERES_TEST(graph_algorithms)
-  CERES_TEST(householder_vector)
-  CERES_TEST(implicit_schur_complement)
-  CERES_TEST(iterative_schur_complement_solver)
-  CERES_TEST(jet)
-  CERES_TEST(levenberg_marquardt_strategy)
-  CERES_TEST(dogleg_strategy)
-  CERES_TEST(line_search_preprocessor)
-  CERES_TEST(local_parameterization)
-  CERES_TEST(loss_function)
-  CERES_TEST(minimizer)
-  CERES_TEST(normal_prior)
-  CERES_TEST(numeric_diff_cost_function)
-  CERES_TEST(ordered_groups)
-  CERES_TEST(parameter_block)
-  CERES_TEST(parameter_block_ordering)
-  CERES_TEST(partitioned_matrix_view)
-  CERES_TEST(polynomial)
-  CERES_TEST(problem)
-  CERES_TEST(program)
-  CERES_TEST(reorder_program)
-  CERES_TEST(residual_block)
-  CERES_TEST(residual_block_utils)
-  CERES_TEST(rotation)
-  CERES_TEST(schur_complement_solver)
-  CERES_TEST(schur_eliminator)
-  CERES_TEST(single_linkage_clustering)
-  CERES_TEST(small_blas)
-  CERES_TEST(solver)
-
-  # TODO(sameeragarwal): This test should ultimately be made
-  # independent of SuiteSparse.
-  IF (SUITESPARSE AND SUITESPARSE_FOUND)
-    CERES_TEST(compressed_col_sparse_matrix_utils)
-    TARGET_LINK_LIBRARIES(compressed_col_sparse_matrix_utils_test
-                          ${SUITESPARSE_LIBRARIES})
-  ENDIF (SUITESPARSE AND SUITESPARSE_FOUND)
-
-  CERES_TEST(symmetric_linear_solver)
-  CERES_TEST(triplet_sparse_matrix)
-  CERES_TEST(trust_region_minimizer)
-  CERES_TEST(trust_region_preprocessor)
-  CERES_TEST(unsymmetric_linear_solver)
-  CERES_TEST(visibility)
-  CERES_TEST(visibility_based_preconditioner)
-
-  # Put the large end to end test last.
-  CERES_TEST(system)
-ENDIF (BUILD_TESTING AND GFLAGS)
+yong_add_library_end(ceres)
+#INSTALL(TARGETS ceres
+#        EXPORT  CeresExport
+#        RUNTIME DESTINATION bin
+#        LIBRARY DESTINATION lib${LIB_SUFFIX}
+#        ARCHIVE DESTINATION lib${LIB_SUFFIX})
+#
+#IF (BUILD_TESTING AND GFLAGS)
+#  # The CERES_GFLAGS_NAMESPACE compile definition is NOT stored in
+#  # CERES_COMPILE_OPTIONS (and thus config.h) as Ceres itself does not
+#  # require gflags, only the tests and examples do.
+#  ADD_DEFINITIONS(-DCERES_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
+#
+#  ADD_LIBRARY(gtest gmock_gtest_all.cc gmock_main.cc)
+#  ADD_LIBRARY(test_util
+#              evaluator_test_utils.cc
+#              numeric_diff_test_utils.cc
+#              test_util.cc)
+#
+#  IF (MINIGLOG)
+#    # When using miniglog, it is compiled into Ceres, thus Ceres becomes
+#    # the library against which other libraries should link for logging.
+#    TARGET_LINK_LIBRARIES(gtest ${GFLAGS_LIBRARIES} ceres)
+#    TARGET_LINK_LIBRARIES(test_util ceres gtest)
+#  ELSE (MINIGLOG)
+#    TARGET_LINK_LIBRARIES(gtest ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES})
+#    TARGET_LINK_LIBRARIES(test_util ceres gtest ${GLOG_LIBRARIES})
+#  ENDIF (MINIGLOG)
+#
+#  MACRO (CERES_TEST NAME)
+#    ADD_EXECUTABLE(${NAME}_test ${NAME}_test.cc)
+#    TARGET_LINK_LIBRARIES(${NAME}_test test_util ceres gtest)
+#    ADD_TEST(NAME ${NAME}_test
+#             COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${NAME}_test
+#             --test_srcdir
+#             ${CMAKE_SOURCE_DIR}/data)
+#  ENDMACRO (CERES_TEST)
+#
+#  CERES_TEST(array_utils)
+#  CERES_TEST(autodiff)
+#  CERES_TEST(autodiff_cost_function)
+#  CERES_TEST(autodiff_local_parameterization)
+#  CERES_TEST(block_jacobi_preconditioner)
+#  CERES_TEST(block_random_access_dense_matrix)
+#  CERES_TEST(block_random_access_diagonal_matrix)
+#  CERES_TEST(block_random_access_sparse_matrix)
+#  CERES_TEST(block_sparse_matrix)
+#  CERES_TEST(c_api)
+#  CERES_TEST(canonical_views_clustering)
+#  CERES_TEST(compressed_row_sparse_matrix)
+#  CERES_TEST(conditioned_cost_function)
+#  CERES_TEST(corrector)
+#  CERES_TEST(cost_function_to_functor)
+#  CERES_TEST(covariance)
+#  CERES_TEST(cubic_interpolation)
+#  CERES_TEST(dense_sparse_matrix)
+#  CERES_TEST(dynamic_autodiff_cost_function)
+#  CERES_TEST(dynamic_compressed_row_sparse_matrix)
+#  CERES_TEST(dynamic_numeric_diff_cost_function)
+#  CERES_TEST(evaluator)
+#  CERES_TEST(gradient_checker)
+#  CERES_TEST(gradient_checking_cost_function)
+#  CERES_TEST(graph)
+#  CERES_TEST(graph_algorithms)
+#  CERES_TEST(householder_vector)
+#  CERES_TEST(implicit_schur_complement)
+#  CERES_TEST(iterative_schur_complement_solver)
+#  CERES_TEST(jet)
+#  CERES_TEST(levenberg_marquardt_strategy)
+#  CERES_TEST(dogleg_strategy)
+#  CERES_TEST(line_search_preprocessor)
+#  CERES_TEST(local_parameterization)
+#  CERES_TEST(loss_function)
+#  CERES_TEST(minimizer)
+#  CERES_TEST(normal_prior)
+#  CERES_TEST(numeric_diff_cost_function)
+#  CERES_TEST(ordered_groups)
+#  CERES_TEST(parameter_block)
+#  CERES_TEST(parameter_block_ordering)
+#  CERES_TEST(partitioned_matrix_view)
+#  CERES_TEST(polynomial)
+#  CERES_TEST(problem)
+#  CERES_TEST(program)
+#  CERES_TEST(reorder_program)
+#  CERES_TEST(residual_block)
+#  CERES_TEST(residual_block_utils)
+#  CERES_TEST(rotation)
+#  CERES_TEST(schur_complement_solver)
+#  CERES_TEST(schur_eliminator)
+#  CERES_TEST(single_linkage_clustering)
+#  CERES_TEST(small_blas)
+#  CERES_TEST(solver)
+#
+#  # TODO(sameeragarwal): This test should ultimately be made
+#  # independent of SuiteSparse.
+#  IF (SUITESPARSE AND SUITESPARSE_FOUND)
+#    CERES_TEST(compressed_col_sparse_matrix_utils)
+#    TARGET_LINK_LIBRARIES(compressed_col_sparse_matrix_utils_test
+#                          ${SUITESPARSE_LIBRARIES})
+#  ENDIF (SUITESPARSE AND SUITESPARSE_FOUND)
+#
+#  CERES_TEST(symmetric_linear_solver)
+#  CERES_TEST(triplet_sparse_matrix)
+#  CERES_TEST(trust_region_minimizer)
+#  CERES_TEST(trust_region_preprocessor)
+#  CERES_TEST(unsymmetric_linear_solver)
+#  CERES_TEST(visibility)
+#  CERES_TEST(visibility_based_preconditioner)
+#
+#  # Put the large end to end test last.
+#  CERES_TEST(system)
+#ENDIF (BUILD_TESTING AND GFLAGS)
