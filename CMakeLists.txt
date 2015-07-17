@@ -812,7 +812,7 @@ IF (MINIGLOG)
   # installed public Ceres headers.
   #INSTALL(FILES ${CMAKE_SOURCE_DIR}/internal/ceres/miniglog/glog/logging.h
   #        DESTINATION include/ceres/internal/miniglog/glog)
-  yong_install_header_files(ceres "ceres/internal/miniglog/glog"
+  yong_install_header_files(ceres "glog"
     "${CMAKE_CURRENT_SOURCE_DIR}/internal/ceres/miniglog/glog/logging.h")
 ENDIF (MINIGLOG)
 
